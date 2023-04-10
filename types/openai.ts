@@ -5,6 +5,7 @@ export interface OpenAIModel {
   name: string;
   maxLength: number; // maximum length of a message
   tokenLimit: number;
+  alias?: string ; // optional alias, used by Azure backend
 }
 
 export enum OpenAIModelID {

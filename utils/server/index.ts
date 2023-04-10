@@ -6,6 +6,7 @@ import {
   ReconnectInterval,
 } from 'eventsource-parser';
 import { OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION } from '../app/const';
+import { findModelById } from '../../pages/api/models' ;
 
 export class OpenAIError extends Error {
   type: string;
@@ -29,7 +30,9 @@ export const OpenAIStream = async (
 ) => {
   let url = `${OPENAI_API_HOST}/v1/chat/completions`;
   if (OPENAI_API_TYPE === 'azure') {
-    url = `${OPENAI_API_HOST}/openai/deployments/${model.id}/chat/completions?api-version=${OPENAI_API_VERSION}`;
+    // Find out under which model name `model.id` is deployied
+    const azureModel = await findModelById(model.id) ;
+    url = `${OPENAI_API_HOST}/openai/deployments/${azureModel?.alias}/chat/completions?api-version=${OPENAI_API_VERSION}`;
   }
   const res = await fetch(url, {
     headers: {
