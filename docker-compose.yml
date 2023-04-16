@@ -2,7 +2,7 @@ version: '3.6'
 
 services:
   chatbot:
-    image: ghcr.io/mckaywrigley/chatbot-ui:main
+    image: ghcr.io/itbm/chatbot-ui:latest
     restart: unless-stopped
     ports:
       - 3000:3000
