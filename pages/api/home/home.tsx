@@ -15,14 +15,16 @@ import {
   cleanConversationHistory,
   cleanSelectedConversation,
 } from '@/utils/app/clean';
-import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
+import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE, DATABASE_TYPE } from '@/utils/app/const';
 import {
-  saveConversation,
+  saveSelectedConversation,
   saveConversations,
   updateConversation,
+  getSelectedConversation,
+  getConversations,
 } from '@/utils/app/conversation';
-import { saveFolders } from '@/utils/app/folders';
-import { savePrompts } from '@/utils/app/prompts';
+import { getFolders, saveFolders } from '@/utils/app/folders';
+import { getPrompts, savePrompts } from '@/utils/app/prompts';
 import { getSettings } from '@/utils/app/settings';
 
 import { Conversation } from '@/types/chat';
@@ -45,12 +47,14 @@ interface Props {
   serverSideApiKeyIsSet: boolean;
   serverSidePluginKeysSet: boolean;
   defaultModelId: OpenAIModelID;
+  databaseType: string;
 }
 
 const Home = ({
   serverSideApiKeyIsSet,
   serverSidePluginKeysSet,
   defaultModelId,
+  databaseType,
 }: Props) => {
   const { t } = useTranslation('chat');
   const { getModels } = useApiService();
@@ -107,7 +111,7 @@ const Home = ({
       value: conversation,
     });
 
-    saveConversation(conversation);
+    saveSelectedConversation(conversation);
   };
 
   // FOLDER OPERATIONS  --------------------------------------------
@@ -122,13 +126,13 @@ const Home = ({
     const updatedFolders = [...folders, newFolder];
 
     dispatch({ field: 'folders', value: updatedFolders });
-    saveFolders(updatedFolders);
+    saveFolders(databaseType, updatedFolders);
   };
 
   const handleDeleteFolder = (folderId: string) => {
     const updatedFolders = folders.filter((f) => f.id !== folderId);
     dispatch({ field: 'folders', value: updatedFolders });
-    saveFolders(updatedFolders);
+    saveFolders(databaseType, updatedFolders);
 
     const updatedConversations: Conversation[] = conversations.map((c) => {
       if (c.folderId === folderId) {
@@ -142,7 +146,7 @@ const Home = ({
     });
 
     dispatch({ field: 'conversations', value: updatedConversations });
-    saveConversations(updatedConversations);
+    saveConversations(databaseType, updatedConversations);
 
     const updatedPrompts: Prompt[] = prompts.map((p) => {
       if (p.folderId === folderId) {
@@ -156,7 +160,7 @@ const Home = ({
     });
 
     dispatch({ field: 'prompts', value: updatedPrompts });
-    savePrompts(updatedPrompts);
+    savePrompts(databaseType, updatedPrompts);
   };
 
   const handleUpdateFolder = (folderId: string, name: string) => {
@@ -173,7 +177,7 @@ const Home = ({
 
     dispatch({ field: 'folders', value: updatedFolders });
 
-    saveFolders(updatedFolders);
+    saveFolders(databaseType, updatedFolders);
   };
 
   // CONVERSATION OPERATIONS  --------------------------------------------
@@ -201,8 +205,8 @@ const Home = ({
     dispatch({ field: 'selectedConversation', value: newConversation });
     dispatch({ field: 'conversations', value: updatedConversations });
 
-    saveConversation(newConversation);
-    saveConversations(updatedConversations);
+    saveSelectedConversation(newConversation);
+    saveConversations(databaseType, updatedConversations);
 
     dispatch({ field: 'loading', value: false });
   };
@@ -217,6 +221,7 @@ const Home = ({
     };
 
     const { single, all } = updateConversation(
+      databaseType,
       updatedConversation,
       conversations,
     );
@@ -236,6 +241,8 @@ const Home = ({
   useEffect(() => {
     defaultModelId &&
       dispatch({ field: 'defaultModelId', value: defaultModelId });
+    databaseType && 
+      dispatch({ field: 'databaseType', value: databaseType });
     serverSideApiKeyIsSet &&
       dispatch({
         field: 'serverSideApiKeyIsSet',
@@ -246,7 +253,7 @@ const Home = ({
         field: 'serverSidePluginKeysSet',
         value: serverSidePluginKeysSet,
       });
-  }, [defaultModelId, serverSideApiKeyIsSet, serverSidePluginKeysSet]);
+  }, [defaultModelId, databaseType, serverSideApiKeyIsSet, serverSidePluginKeysSet]);
 
   // ON LOAD --------------------------------------------
 
@@ -292,28 +299,36 @@ const Home = ({
       dispatch({ field: 'showPromptbar', value: showPromptbar === 'true' });
     }
 
-    const folders = localStorage.getItem('folders');
-    if (folders) {
-      dispatch({ field: 'folders', value: JSON.parse(folders) });
-    }
-
-    const prompts = localStorage.getItem('prompts');
-    if (prompts) {
-      dispatch({ field: 'prompts', value: JSON.parse(prompts) });
-    }
-
-    const conversationHistory = localStorage.getItem('conversationHistory');
-    if (conversationHistory) {
-      const parsedConversationHistory: Conversation[] =
-        JSON.parse(conversationHistory);
-      const cleanedConversationHistory = cleanConversationHistory(
-        parsedConversationHistory,
+    getFolders(databaseType).then(
+        (folders) => {
+          if (folders) {
+            dispatch({ field: 'folders', value: folders });
+          }
+        },
       );
 
-      dispatch({ field: 'conversations', value: cleanedConversationHistory });
-    }
+    getPrompts(databaseType).then(
+      (prompts) => {
+        if (prompts) {
+          dispatch({ field: 'prompts', value: prompts });
+        }
+      },
+    );
 
-    const selectedConversation = localStorage.getItem('selectedConversation');
+    getConversations(databaseType).then(
+      (conversationHistory) => {
+        if (conversationHistory) {
+          const parsedConversationHistory: Conversation[] = conversationHistory;
+          const cleanedConversationHistory = cleanConversationHistory(
+            parsedConversationHistory,
+          );
+    
+          dispatch({ field: 'conversations', value: cleanedConversationHistory });
+        }
+      },
+    );
+
+    const selectedConversation = getSelectedConversation();
     if (selectedConversation) {
       const parsedSelectedConversation: Conversation =
         JSON.parse(selectedConversation);
@@ -342,6 +357,7 @@ const Home = ({
     }
   }, [
     defaultModelId,
+    databaseType,
     dispatch,
     serverSideApiKeyIsSet,
     serverSidePluginKeysSet,
@@ -404,6 +420,8 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
       process.env.DEFAULT_MODEL) ||
     fallbackModelID;
 
+  const databaseType = DATABASE_TYPE;
+
   let serverSidePluginKeysSet = false;
 
   const googleApiKey = process.env.GOOGLE_API_KEY;
@@ -417,6 +435,7 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
     props: {
       serverSideApiKeyIsSet: !!process.env.OPENAI_API_KEY,
       defaultModelId,
+      databaseType,
       serverSidePluginKeysSet,
       ...(await serverSideTranslations(locale ?? 'en', [
         'common',

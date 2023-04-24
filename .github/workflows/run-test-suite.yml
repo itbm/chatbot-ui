@@ -2,10 +2,10 @@ name: Run Unit Tests
 on:
   push:
     branches:
-      - main
+      - latest
   pull_request:
     branches:
-      - main
+      - latest
 
 jobs:
   test:
