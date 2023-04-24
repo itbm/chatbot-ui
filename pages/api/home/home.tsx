@@ -25,6 +25,7 @@ import {
 } from '@/utils/app/conversation';
 import { getFolders, saveFolders } from '@/utils/app/folders';
 import { getPrompts, savePrompts } from '@/utils/app/prompts';
+import { getSettings } from '@/utils/app/settings';
 
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
@@ -72,7 +73,7 @@ const Home = ({
       conversations,
       selectedConversation,
       prompts,
-      temperature
+      temperature,
     },
     dispatch,
   } = contextValue;
@@ -186,7 +187,7 @@ const Home = ({
 
     const newConversation: Conversation = {
       id: uuidv4(),
-      name: `${t('New Conversation')}`,
+      name: t('New Conversation'),
       messages: [],
       model: lastConversation?.model || {
         id: OpenAIModels[defaultModelId].id,
@@ -195,7 +196,7 @@ const Home = ({
         tokenLimit: OpenAIModels[defaultModelId].tokenLimit,
       },
       prompt: DEFAULT_SYSTEM_PROMPT,
-      temperature: DEFAULT_TEMPERATURE,
+      temperature: lastConversation?.temperature ?? DEFAULT_TEMPERATURE,
       folderId: null,
     };
 
@@ -257,9 +258,12 @@ const Home = ({
   // ON LOAD --------------------------------------------
 
   useEffect(() => {
-    const theme = localStorage.getItem('theme');
-    if (theme) {
-      dispatch({ field: 'lightMode', value: theme as 'dark' | 'light' });
+    const settings = getSettings();
+    if (settings.theme) {
+      dispatch({
+        field: 'lightMode',
+        value: settings.theme,
+      });
     }
 
     const apiKey = localStorage.getItem('apiKey');
@@ -337,15 +341,16 @@ const Home = ({
         value: cleanedSelectedConversation,
       });
     } else {
+      const lastConversation = conversations[conversations.length - 1];
       dispatch({
         field: 'selectedConversation',
         value: {
           id: uuidv4(),
-          name: 'New conversation',
+          name: t('New Conversation'),
           messages: [],
           model: OpenAIModels[defaultModelId],
           prompt: DEFAULT_SYSTEM_PROMPT,
-          temperature: DEFAULT_TEMPERATURE,
+          temperature: lastConversation?.temperature ?? DEFAULT_TEMPERATURE,
           folderId: null,
         },
       });
@@ -438,6 +443,7 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
         'sidebar',
         'markdown',
         'promptbar',
+        'settings',
       ])),
     },
   };
