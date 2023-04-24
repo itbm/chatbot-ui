@@ -106,43 +106,44 @@ export const importData = (
 ): LatestExportFormat => {
   const { history, folders, prompts } = cleanData(data);
 
-  const oldConversations = getConversations(databaseType);
-  const oldConversationsParsed = oldConversations
-    ? oldConversations
-    : [];
+  let newHistory: Conversation[] =  [];
+  getConversations(databaseType).then((oldConversations) => {
+    newHistory = [
+      ...oldConversations,
+      ...history,
+    ].filter(
+      (conversation, index, self) =>
+        index === self.findIndex((c) => c.id === conversation.id),
+    );
+    saveConversations(databaseType, newHistory);
+    if (newHistory.length > 0) {
+      saveSelectedConversation(newHistory[newHistory.length - 1]);
+    } else {
+      localStorage.removeItem('selectedConversation');
+    }
+  });
 
-  const newHistory: Conversation[] = [
-    ...oldConversationsParsed,
-    ...history,
-  ].filter(
-    (conversation, index, self) =>
-      index === self.findIndex((c) => c.id === conversation.id),
-  );
-  saveConversations(databaseType, newHistory);
-  if (newHistory.length > 0) {
-    saveSelectedConversation(newHistory[newHistory.length - 1]);
-  } else {
-    localStorage.removeItem('selectedConversation');
-  }
+  let newFolders: FolderInterface[] = [];
+  getFolders(databaseType).then((oldFolders) => {
+    newFolders = [
+      ...oldFolders,
+      ...folders,
+    ].filter(
+      (folder, index, self) =>
+        index === self.findIndex((f) => f.id === folder.id),
+    );
+    saveFolders(databaseType, newFolders);
+  });  
 
-  const oldFolders = getFolders(databaseType);
-  const oldFoldersParsed = oldFolders ? oldFolders : [];
-  const newFolders: FolderInterface[] = [
-    ...oldFoldersParsed,
-    ...folders,
-  ].filter(
-    (folder, index, self) =>
-      index === self.findIndex((f) => f.id === folder.id),
-  );
-  saveFolders(databaseType, newFolders);
-
-  const oldPrompts = getPrompts(databaseType);
-  const oldPromptsParsed = oldPrompts ? oldPrompts : [];
-  const newPrompts: Prompt[] = [...oldPromptsParsed, ...prompts].filter(
-    (prompt, index, self) =>
-      index === self.findIndex((p) => p.id === prompt.id),
-  );
-  savePrompts(databaseType, newPrompts);
+  let newPrompts: Prompt[] = [];
+  getPrompts(databaseType).then((oldPrompts) => {
+    newPrompts = [...oldPrompts, ...prompts].filter(
+      (prompt, index, self) =>
+        index === self.findIndex((p) => p.id === prompt.id),
+    );
+    savePrompts(databaseType, newPrompts);
+  });
+  
 
   return {
     version: 4,
