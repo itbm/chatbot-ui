@@ -1,6 +1,6 @@
 export const DEFAULT_SYSTEM_PROMPT =
   process.env.NEXT_PUBLIC_DEFAULT_SYSTEM_PROMPT ||
-  "You are ChatGPT, a large language model trained by OpenAI. Follow the user's instructions carefully. Respond using British English and markdown.";
+  "You are ChatGPT, a large language model trained by OpenAI. Follow the user's instructions carefully and use British English. Respond using markdown.";
 
 export const OPENAI_API_HOST =
   process.env.OPENAI_API_HOST || 'https://api.openai.com';
@@ -12,7 +12,7 @@ export const OPENAI_API_TYPE =
   process.env.OPENAI_API_TYPE || 'openai';
 
 export const OPENAI_API_VERSION =
-  process.env.OPENAI_API_VERSION || '2023-03-15-preview';
+  process.env.OPENAI_API_VERSION || '2023-05-15';
 
 export const OPENAI_ORGANIZATION =
   process.env.OPENAI_ORGANIZATION || '';
