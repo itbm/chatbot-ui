@@ -14,6 +14,9 @@ export const OPENAI_API_TYPE =
 export const OPENAI_API_VERSION =
   process.env.OPENAI_API_VERSION || '2023-03-15-preview';
 
+export const OPENAI_API_STREAM: boolean =
+  process.env.OPENAI_API_STREAM == null ? true : process.env.OPENAI_API_STREAM === 'true';
+
 export const OPENAI_ORGANIZATION =
   process.env.OPENAI_ORGANIZATION || '';
 

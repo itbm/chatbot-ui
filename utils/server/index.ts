@@ -1,7 +1,7 @@
 import { Message } from '@/types/chat';
 import { OpenAIModel } from '@/types/openai';
 
-import { OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION } from '../app/const';
+import { OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_API_STREAM, OPENAI_ORGANIZATION } from '../app/const';
 
 import {
   ParsedEvent,
@@ -60,7 +60,7 @@ export const OpenAIStream = async (
       ],
       max_tokens: (model.tokenLimit - tokenCount),
       temperature: temperature,
-      stream: true,
+      stream: OPENAI_API_STREAM,
     }),
   });
 
